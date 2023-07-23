@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="b7b2bdc0-b606-4309-b71c-858abbe56479" name="WSL">
+        <fileTransfer rootFolder="/home/misaka-l/rider" accessType="SFTP" host="localhost" port="2222" sshConfigId="ddd7e9ed-e87a-4813-85eb-371fd227cbf6" sshConfig="misaka-l@localhost:2222 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

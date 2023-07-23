@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="WSL" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="WSL">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$/NamelessCraft.sln" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Test/NamelessCraft.Test.csproj" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Test/Program.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Test/obj/Debug/net7.0/NamelessCraft.Test.GlobalUsings.g.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Test/obj/Debug/net7.0/NamelessCraft.Test.AssemblyInfo.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Test/obj/Debug/net7.0/NamelessCraft.Test.GeneratedMSBuildEditorConfig.editorconfig" web="/" />
+            <mapping local="C:/Program Files/dotnet/sdk/7.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_7_default.editorconfig" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/NamelessCraft.csproj" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/obj/Debug/net7.0/NamelessCraft.GlobalUsings.g.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/obj/Debug/net7.0/NamelessCraft.AssemblyInfo.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/obj/Debug/net7.0/NamelessCraft.GeneratedMSBuildEditorConfig.editorconfig" web="/" />
+            <mapping local="C:/Program Files/dotnet/sdk/7.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_7_default.editorconfig" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/NamelessLauncher.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Options/LauncherOptions.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/NamelessCraft.Core.csproj" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/obj/Debug/net7.0/NamelessCraft.Core.GlobalUsings.g.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/obj/Debug/net7.0/NamelessCraft.Core.AssemblyInfo.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/obj/Debug/net7.0/NamelessCraft.Core.GeneratedMSBuildEditorConfig.editorconfig" web="/" />
+            <mapping local="C:/Program Files/dotnet/sdk/7.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_7_default.editorconfig" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/ILauncher.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/IGameAuthenticator.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Authenticator/OfflineAuthenticator.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/Models/GameAuthenticationResult.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Tools/UuidTools.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/Models/Minecraft/VersionInfo.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/Tools/OSVersionTools.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/Models/Minecraft/MinecraftOSIdentify.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Tools/RuleTools.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Authenticator/MicrosoftAuthenticator.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Options/MicrosoftAuthenticatorOptions.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Xbox/XboxUserAuthenticateResponse.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Xbox/XboxDisplayClaims.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Tools/HttpClientExtension.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Minecraft/MinecraftLoginResponse.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Models/Minecraft/MinecraftProfileResponse.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft/Tools/JvmTools.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/NamelessCraft.Core/Models/JvmRuntime.cs" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

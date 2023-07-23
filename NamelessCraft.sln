@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessCraft.Test", "NamelessCraft.Test\NamelessCraft.Test.csproj", "{D00A9797-7C8E-4F51-AC0A-971C79E2E575}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessCraft", "NamelessCraft\NamelessCraft.csproj", "{214CDD80-3111-4764-9F5E-FB04CA5BA690}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessCraft.Core", "NamelessCraft.Core\NamelessCraft.Core.csproj", "{A55607E8-7962-43FB-84EC-2D47DD968CCD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D00A9797-7C8E-4F51-AC0A-971C79E2E575}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D00A9797-7C8E-4F51-AC0A-971C79E2E575}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D00A9797-7C8E-4F51-AC0A-971C79E2E575}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D00A9797-7C8E-4F51-AC0A-971C79E2E575}.Release|Any CPU.Build.0 = Release|Any CPU
+		{214CDD80-3111-4764-9F5E-FB04CA5BA690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{214CDD80-3111-4764-9F5E-FB04CA5BA690}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{214CDD80-3111-4764-9F5E-FB04CA5BA690}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{214CDD80-3111-4764-9F5E-FB04CA5BA690}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
