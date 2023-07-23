@@ -14,7 +14,7 @@ namespace NamelessCraft;
 public partial class NamelessLauncher : ILauncher
 {
     public readonly LauncherOptions Options;
-    
+
     public event DataReceivedEventHandler? GameOutputDataReceived;
     public event EventHandler<EventArgs>? GameExited;
 
@@ -42,26 +42,34 @@ public partial class NamelessLauncher : ILauncher
         Debug.WriteLine($"{args}");
         Console.WriteLine($"{args}");
 
-        var jvmRuntime = Options.JvmRuntime;
-        if (jvmRuntime == null)
+        var jvmRuntimePath = Options.JvmRuntimePath;
+        if (jvmRuntimePath == null)
         {
             var jvmRuntimes = await JvmTools.LookupJvmRuntimesAsync();
-            if (info.RequiredJavaVersion is { } requiredJavaVersion)
+            if (info.MinecraftVersionInfo.RequiredJavaVersion is { } requiredJavaVersion)
             {
-                jvmRuntime = jvmRuntimes.Where(jvm => jvm.MajorVersion >= requiredJavaVersion.MajorVersion)
-                    .OrderBy(jvm => jvm.MajorVersion)
-                    .First();
+                var tempJvmRuntimes = jvmRuntimes.Where(jvm => jvm.MajorVersion >= requiredJavaVersion.MajorVersion)
+                    .OrderBy(jvm => jvm.MajorVersion).ToArray();
+
+                if (tempJvmRuntimes.Length == 0)
+                    throw new InvalidOperationException(
+                        $"No JVM runtime available (required {requiredJavaVersion.MajorVersion})");
+
+                jvmRuntimePath = tempJvmRuntimes.First().GetJavaExecutable();
             }
             else
             {
-                jvmRuntime = jvmRuntimes.OrderByDescending(jvm => jvm.MajorVersion)
-                    .First();
+                var tempJvmRuntimes = jvmRuntimes.OrderByDescending(jvm => jvm.MajorVersion).ToArray();
+                if (tempJvmRuntimes.Length == 0)
+                    throw new InvalidOperationException("No JVM runtime available");
+
+                jvmRuntimePath = tempJvmRuntimes.First().GetJavaExecutable();
             }
         }
 
         var process = Process.Start(new ProcessStartInfo()
         {
-            FileName = jvmRuntime.GetJavaExecutable(),
+            FileName = jvmRuntimePath,
             WorkingDirectory = Options.GameDirectory,
             Arguments = args,
             UseShellExecute = false,
@@ -75,7 +83,7 @@ public partial class NamelessLauncher : ILauncher
             throw new InvalidOperationException("Can't start the process");
 
         process.EnableRaisingEvents = true;
-        
+
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
@@ -101,6 +109,8 @@ public partial class NamelessLauncher : ILauncher
         var systemArchitecture = OSVersionTools.GetOSArchitecture();
         var systemVersion = OSVersionTools.GetOSVersion();
 
+        var versionJarPath = Options.VersionJarPath ?? Options.MinecraftVersionInfo.VersionJarPath;
+
         var features = Options.LaunchFeatures;
         var arguments = Options.LaunchArguments;
 
@@ -109,22 +119,25 @@ public partial class NamelessLauncher : ILauncher
         arguments.Add("game_directory", Options.GameDirectory);
         arguments.Add("assets_root", Options.AssetsDirectoryPath);
         arguments.Add("game_assets", Options.AssetsDirectoryPath);
-        arguments.Add("assets_index_name", info.Assets);
+        arguments.Add("assets_index_name", info.MinecraftVersionInfo.Assets ?? info.Id);
         arguments.Add("auth_uuid", result.Uuid.ToMinecraftUuid());
         arguments.Add("auth_access_token", result.AccessToken);
         arguments.Add("user_type", result.AuthenticationType.ToLaunchArgument());
         arguments.Add("version_type",
-            string.IsNullOrWhiteSpace(Options.CustomVersionType) ? info.Type : Options.CustomVersionType);
+            string.IsNullOrWhiteSpace(Options.CustomVersionType)
+                ? info.MinecraftVersionInfo.Type
+                : Options.CustomVersionType);
         arguments.Add("launcher_name", Options.LauncherName);
         arguments.Add("launcher_version", Options.LauncherVersion);
         arguments.Add("natives_directory",
             Path.Join(Path.GetTempPath(), Path.GetRandomFileName() + Path.DirectorySeparatorChar));
 
-        arguments.Add("classpath", GenClassPath(info.Libraries, features, "windows", "x86",
-            systemVersion, "D:/Minecraft/BakaXL/.minecraft/libraries",
-            "D:/Minecraft/BakaXL/.minecraft/versions/1.20.1/1.20.1.jar"));
+        arguments.Add("classpath", GenClassPath(info.MinecraftVersionInfo.Libraries, features, "windows", "x86",
+            systemVersion, Options.LibrariesDirectoryPath,
+            versionJarPath));
 
-        var args = GenLaunchArgs(info, features, arguments, systemName, systemArchitecture, systemVersion);
+        var args = GenLaunchArgs(info.MinecraftVersionInfo, features, arguments, systemName, systemArchitecture,
+            systemVersion);
 
         return args;
     }
@@ -151,7 +164,8 @@ public partial class NamelessLauncher : ILauncher
         return argsBuilder.ToString();
     }
 
-    private static string GenLaunchArgsInternal(MinecraftGameLaunchArgument[] launchArguments, Dictionary<string, bool> features,
+    private static string GenLaunchArgsInternal(MinecraftGameLaunchArgument[] launchArguments,
+        Dictionary<string, bool> features,
         Dictionary<string, string> arguments, string systemName, string systemArchitecture, string systemVersion)
     {
         var argsBuilder = new StringBuilder();

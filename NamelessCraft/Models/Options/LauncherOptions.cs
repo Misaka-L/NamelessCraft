@@ -11,14 +11,14 @@ public class LauncherOptions
     public string CustomJvmArguments { get; set; } = "";
     public string CustomGameArguments { get; set; } = "";
 
-    public MinecraftVersionInfo? MinecraftVersionInfo { get; set; }
+    public GameVersion? MinecraftVersionInfo { get; set; }
 
-    public JvmRuntime? JvmRuntime { get; set; }
+    public string? JvmRuntimePath { get; set; }
 
     public string GameDirectory { get; set; } = "";
     public string AssetsDirectoryPath { get; set; } = "";
     public string LibrariesDirectoryPath { get; set; } = "";
-    public string VersionJarPath { get; set; } = "";
+    public string? VersionJarPath { get; set; }
 
     public Dictionary<string, string> LaunchArguments { get; set; } = new();
     public Dictionary<string, bool> LaunchFeatures { get; set; } = new();
