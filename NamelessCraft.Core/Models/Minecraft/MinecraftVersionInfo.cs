@@ -10,16 +10,16 @@ using System.Globalization;
 
 public class MinecraftVersionInfo
 {
-    [JsonPropertyName("arguments")] public ModernLaunchArgument? ModernLaunchArguments { get; set; }
+    [JsonPropertyName("arguments")] public MinecraftModernLaunchArgument? ModernLaunchArguments { get; set; }
 
     [JsonPropertyName("minecraftArguments")]
     public string? LegacyLaunchArguments { get; set; }
 
-    [JsonPropertyName("assetIndex")] public AssetIndex AssetIndex { get; set; }
+    [JsonPropertyName("assetIndex")] public AssetIndex? AssetIndex { get; set; }
 
     [JsonPropertyName("inheritsFrom")] public string? InheritsFrom { get; set; }
 
-    [JsonPropertyName("assets")] public string Assets { get; set; }
+    [JsonPropertyName("assets")] public string? Assets { get; set; }
 
     [JsonPropertyName("complianceLevel")] public long? ComplianceLevel { get; set; }
 
@@ -41,105 +41,103 @@ public class MinecraftVersionInfo
 
     [JsonPropertyName("type")] public string Type { get; set; }
 
-    public static MinecraftVersionInfo? ParseFromFile(string jsonPath) =>
-        Parse(File.ReadAllText(jsonPath));
-
-    public static MinecraftVersionInfo? Parse(string jsonContent)
+    public static MinecraftVersionInfo ParseFromFile(string jsonPath, string? minecraftVersionFolderPath = null)
     {
-        return JsonSerializer.Deserialize<MinecraftVersionInfo>(jsonContent,
+        if (!File.Exists(jsonPath))
+            throw new ArgumentException("File not exists", nameof(jsonPath));
+
+        var versionInfo = JsonSerializer.Deserialize<MinecraftVersionInfo>(File.ReadAllText(jsonPath),
             MinecraftVersionInfoJsonConverter.Settings);
-    }
-}
 
-#region LaunchArgument
+        if (versionInfo == null)
+            throw new InvalidOperationException("Can't parse the version json");
 
-public class ModernLaunchArgument
-{
-    [JsonPropertyName("game")] public GameLaunchArgument[] GameLaunchArguments { get; set; }
+        if (versionInfo.InheritsFrom is not { } inheritsFrom)
+            return versionInfo;
 
-    [JsonPropertyName("jvm")] public GameLaunchArgument[] JvmLaunchArguments { get; set; }
-}
+        // if this version json don't have inheritsFrom property, this function will end up at there.
 
-public struct GameLaunchArgument
-{
-    public OptionalLaunchArgument? OptionalLaunchArgument;
-    public string String;
+        if (minecraftVersionFolderPath == null)
+            throw new InvalidOperationException(
+                "This version json file have a inheritsFrom property, please provide a minecraft folder path");
 
-    public static implicit operator GameLaunchArgument(OptionalLaunchArgument optionalLaunchArgument) =>
-        new GameLaunchArgument { OptionalLaunchArgument = optionalLaunchArgument };
+        var inheritsFromJsonPath = Path.Join(minecraftVersionFolderPath, inheritsFrom, $"{versionInfo.InheritsFrom}.json");
+        if (!File.Exists(inheritsFromJsonPath))
+            throw new InvalidOperationException(
+                "This version json file have a InheritsFrom property which inherits from a not exists version");
 
-    public static implicit operator GameLaunchArgument(string String) => new GameLaunchArgument { String = String };
-}
+        var inheritsFromVersionInfo = JsonSerializer.Deserialize<MinecraftVersionInfo>(
+            File.ReadAllText(inheritsFromJsonPath),
+            MinecraftVersionInfoJsonConverter.Settings);
 
-public class OptionalLaunchArgument
-{
-    [JsonPropertyName("rules")] public OptionalRule[] Rules { get; set; }
+        if (inheritsFromVersionInfo == null)
+            throw new InvalidOperationException("Can't parse the inherits from version json");
 
-    [JsonPropertyName("value")] public OptionalLaunchArgumentValue Value { get; set; }
-}
+        // arguments
+        versionInfo.LegacyLaunchArguments = InheritsValue(versionInfo.LegacyLaunchArguments,
+            inheritsFromVersionInfo.LegacyLaunchArguments);
 
-public class OptionalRule
-{
-    [JsonPropertyName("action")] public OptionalLaunchArgumentRuleAction Action { get; set; }
-
-    [JsonPropertyName("features")] public Dictionary<string, bool>? OptionalLaunchArgumentFeature { get; set; }
-
-    [JsonPropertyName("os")] public OptionalOsRule? OptionalOsRule { get; set; }
-
-    public bool IsRuleAllow(Dictionary<string, bool> features, string systemName = "",
-        string systemArchitecture = "", string systemVersion = "") =>
-        IsRuleAllow(this, features, systemName, systemArchitecture, systemVersion);
-
-    public static bool IsRuleAllow(OptionalRule rule, Dictionary<string, bool> features, string systemName = "",
-        string systemArchitecture = "", string systemVersion = "")
-    {
-        if (string.IsNullOrWhiteSpace(systemName)) systemName = OSVersionTools.GetOSName();
-        if (string.IsNullOrWhiteSpace(systemArchitecture)) systemArchitecture = OSVersionTools.GetOSArchitecture();
-        if (string.IsNullOrWhiteSpace(systemVersion)) systemVersion = OSVersionTools.GetOSVersion();
-
-        if (rule.OptionalOsRule is { } osRule)
+        if (inheritsFromVersionInfo.ModernLaunchArguments is { } inheritsModernLaunchArguments)
         {
-            if (osRule.Arch is { } arch && arch != systemArchitecture) return IsRuleAllow(rule.Action, false);
-            if (osRule.Name is { } name && name != systemName) return IsRuleAllow(rule.Action, false);
-            if (osRule.VersionRegex is { } versionRegex && !Regex.IsMatch(systemVersion, versionRegex))
-                return IsRuleAllow(rule.Action, false);
-        }
-
-        if (rule.OptionalLaunchArgumentFeature is not { } featuresRule)
-            return IsRuleAllow(rule.Action, true);
-
-        foreach (var (key, value) in featuresRule)
-        {
-            if (features.TryGetValue(key, out var featureValue) && featureValue != value)
+            if (versionInfo.ModernLaunchArguments == null)
             {
-                return IsRuleAllow(rule.Action, false);
+                versionInfo.ModernLaunchArguments = inheritsModernLaunchArguments;
             }
+            else
+            {
+                versionInfo.ModernLaunchArguments.GameLaunchArguments = AddLaunchArguments(
+                    versionInfo.ModernLaunchArguments.GameLaunchArguments,
+                    inheritsModernLaunchArguments.GameLaunchArguments);
 
-            return IsRuleAllow(rule.Action, false);
+                versionInfo.ModernLaunchArguments.JvmLaunchArguments = AddLaunchArguments(
+                    versionInfo.ModernLaunchArguments.JvmLaunchArguments,
+                    inheritsModernLaunchArguments.JvmLaunchArguments);
+            }
         }
 
-        return IsRuleAllow(rule.Action, true);
+        // assets
+        versionInfo.AssetIndex = InheritsValue(versionInfo.AssetIndex, inheritsFromVersionInfo.AssetIndex);
+        versionInfo.Assets = InheritsValue(versionInfo.Assets, inheritsFromVersionInfo.Assets);
+
+        // java version
+        versionInfo.RequiredJavaVersion =
+            InheritsValue(versionInfo.RequiredJavaVersion, inheritsFromVersionInfo.RequiredJavaVersion);
+
+        // logging
+        versionInfo.LoggingOptions = InheritsValue(versionInfo.LoggingOptions, inheritsFromVersionInfo.LoggingOptions);
+        if (versionInfo.LoggingOptions is { ClientLoggingOption: null })
+        {
+            InheritsValue(versionInfo.LoggingOptions.ClientLoggingOption,
+                inheritsFromVersionInfo.LoggingOptions?.ClientLoggingOption);
+        }
+
+        // libraries
+        var libraries = versionInfo.Libraries.ToList();
+        libraries.AddRange(inheritsFromVersionInfo.Libraries);
+
+        versionInfo.Libraries = libraries.ToArray();
+
+        return versionInfo;
     }
 
-    private static bool IsRuleAllow(OptionalLaunchArgumentRuleAction action, bool value) =>
-        action == OptionalLaunchArgumentRuleAction.Allow && value;
-}
+    private static TValue? InheritsValue<TValue>(TValue? source, TValue? inheritsFrom)
+    {
+        return source ?? inheritsFrom;
+    }
 
-#endregion
+    private static MinecraftGameLaunchArgument[] AddLaunchArguments(
+        IEnumerable<MinecraftGameLaunchArgument>? gameLaunchArguments,
+        IEnumerable<MinecraftGameLaunchArgument>? gameLaunchArgumentsToAdd)
+    {
+        var newGameLaunchArguments = new List<MinecraftGameLaunchArgument>();
+        if (gameLaunchArguments != null)
+            newGameLaunchArguments.AddRange(gameLaunchArguments);
 
-public class OptionalOsRule
-{
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
+        if (gameLaunchArgumentsToAdd != null)
+            newGameLaunchArguments.AddRange(gameLaunchArgumentsToAdd);
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("arch")]
-    public string? Arch { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("version")]
-    public string? VersionRegex { get; set; }
+        return newGameLaunchArguments.ToArray();
+    }
 }
 
 public class AssetIndex
@@ -198,7 +196,7 @@ public class Library
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("rules")]
-    public OptionalRule[]? Rules { get; set; }
+    public MinecraftOptionalRule[]? Rules { get; set; }
 
     [JsonPropertyName("extract")] public NativeLibraryExtractSetting? NativeLibraryExtractSetting { get; set; }
 
@@ -239,7 +237,7 @@ public class NativeLibraryExtractSetting
 
 public class LoggingOptions
 {
-    [JsonPropertyName("client")] public ClientLoggingOption ClientLoggingOption { get; set; }
+    [JsonPropertyName("client")] public ClientLoggingOption? ClientLoggingOption { get; set; }
 }
 
 public class ClientLoggingOption
@@ -249,25 +247,6 @@ public class ClientLoggingOption
     [JsonPropertyName("file")] public AssetIndex File { get; set; }
 
     [JsonPropertyName("type")] public string Type { get; set; }
-}
-
-public struct OptionalLaunchArgumentValue
-{
-    public string? String;
-    public string[]? StringArray;
-
-    public static implicit operator OptionalLaunchArgumentValue(string String) =>
-        new OptionalLaunchArgumentValue { String = String };
-
-    public static implicit operator OptionalLaunchArgumentValue(string[] StringArray) =>
-        new OptionalLaunchArgumentValue { StringArray = StringArray };
-}
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum OptionalLaunchArgumentRuleAction
-{
-    Disallow,
-    Allow
 }
 
 #region Converter
@@ -287,27 +266,27 @@ public static class MinecraftVersionInfoJsonConverter
     };
 }
 
-internal class GameElementConverter : JsonConverter<GameLaunchArgument>
+internal class GameElementConverter : JsonConverter<MinecraftGameLaunchArgument>
 {
-    public override bool CanConvert(Type t) => t == typeof(GameLaunchArgument);
+    public override bool CanConvert(Type t) => t == typeof(MinecraftGameLaunchArgument);
 
-    public override GameLaunchArgument Read(ref Utf8JsonReader reader, Type typeToConvert,
+    public override MinecraftGameLaunchArgument Read(ref Utf8JsonReader reader, Type typeToConvert,
         JsonSerializerOptions options)
     {
         switch (reader.TokenType)
         {
             case JsonTokenType.String:
                 var stringValue = reader.GetString();
-                return new GameLaunchArgument { String = stringValue };
+                return new MinecraftGameLaunchArgument { String = stringValue };
             case JsonTokenType.StartObject:
-                var objectValue = JsonSerializer.Deserialize<OptionalLaunchArgument>(ref reader, options);
-                return new GameLaunchArgument { OptionalLaunchArgument = objectValue };
+                var objectValue = JsonSerializer.Deserialize<MinecraftOptionalLaunchArgument>(ref reader, options);
+                return new MinecraftGameLaunchArgument { OptionalLaunchArgument = objectValue };
         }
 
         throw new Exception("Cannot unmarshal type GameElement");
     }
 
-    public override void Write(Utf8JsonWriter writer, GameLaunchArgument value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, MinecraftGameLaunchArgument value, JsonSerializerOptions options)
     {
         if (value.String != null)
         {

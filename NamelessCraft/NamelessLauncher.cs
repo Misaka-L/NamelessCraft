@@ -106,9 +106,9 @@ public partial class NamelessLauncher : ILauncher
 
         arguments.Add("auth_player_name", result.UserName);
         arguments.Add("version_name", info.Id);
-        arguments.Add("game_directory", "D:/Minecraft/BakaXL/.minecraft/versions/1.20.1/");
-        arguments.Add("assets_root", "D:/Minecraft/BakaXL/.minecraft/assets");
-        arguments.Add("game_assets", "D:/Minecraft/BakaXL/.minecraft/assets");
+        arguments.Add("game_directory", Options.GameDirectory);
+        arguments.Add("assets_root", Options.AssetsDirectoryPath);
+        arguments.Add("game_assets", Options.AssetsDirectoryPath);
         arguments.Add("assets_index_name", info.Assets);
         arguments.Add("auth_uuid", result.Uuid.ToMinecraftUuid());
         arguments.Add("auth_access_token", result.AccessToken);
@@ -151,7 +151,7 @@ public partial class NamelessLauncher : ILauncher
         return argsBuilder.ToString();
     }
 
-    private static string GenLaunchArgsInternal(GameLaunchArgument[] launchArguments, Dictionary<string, bool> features,
+    private static string GenLaunchArgsInternal(MinecraftGameLaunchArgument[] launchArguments, Dictionary<string, bool> features,
         Dictionary<string, string> arguments, string systemName, string systemArchitecture, string systemVersion)
     {
         var argsBuilder = new StringBuilder();
@@ -209,7 +209,20 @@ public partial class NamelessLauncher : ILauncher
                 !RuleTools.IsRulesAllow(library.Rules, features, systemName, systemArchitecture, systemVersion))
                 continue;
 
-            classPathBuilder.Append(Path.Join(librariesBasePath, library.Downloads.Artifact.Path) + separator);
+            var libraryPath = library.Downloads?.Artifact?.Path;
+            if (libraryPath == null)
+            {
+                var librarySplit = library.Name.Split(":");
+                var libraryPackage = librarySplit[0];
+                var libraryName = librarySplit[1];
+                var libraryVersion = librarySplit[2];
+
+                libraryPath = Path.Combine(libraryPackage.Split("."));
+                libraryPath = Path.Combine(libraryPath, libraryName, libraryVersion,
+                    $"{libraryName}-{libraryVersion}.jar");
+            }
+
+            classPathBuilder.Append(Path.Join(librariesBasePath, libraryPath) + separator);
         }
 
         classPathBuilder.Append(versionJarPath + separator);
