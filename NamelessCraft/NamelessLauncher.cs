@@ -1,6 +1,6 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using NamelessCraft.Core;
 using NamelessCraft.Core.Models;
@@ -110,6 +110,8 @@ public partial class NamelessLauncher : ILauncher
         var systemVersion = OSVersionTools.GetOSVersion();
 
         var versionJarPath = Options.VersionJarPath ?? Options.MinecraftVersionInfo.VersionJarPath;
+        var nativeFolderPath = await DecompressionNativeLibraries(
+            Options.MinecraftVersionInfo.MinecraftVersionInfo.Libraries, Options.LibrariesDirectoryPath, systemName);
 
         var features = Options.LaunchFeatures;
         var arguments = Options.LaunchArguments;
@@ -129,8 +131,8 @@ public partial class NamelessLauncher : ILauncher
                 : Options.CustomVersionType);
         arguments.Add("launcher_name", Options.LauncherName);
         arguments.Add("launcher_version", Options.LauncherVersion);
-        arguments.Add("natives_directory",
-            Path.Join(Path.GetTempPath(), Path.GetRandomFileName() + Path.DirectorySeparatorChar));
+        arguments.Add("natives_directory", nativeFolderPath);
+        arguments.Add("user_properties", "{}");
 
         arguments.Add("classpath", GenClassPath(info.MinecraftVersionInfo.Libraries, features, "windows", "x86",
             systemVersion, Options.LibrariesDirectoryPath,
@@ -147,7 +149,9 @@ public partial class NamelessLauncher : ILauncher
     {
         if (versionInfo.LegacyLaunchArguments is { } legacyLaunchArguments)
         {
-            return ReplaceArgumentTemplate(legacyLaunchArguments, arguments);
+            var jvmArgs = GenJvmArguments(arguments);
+            var gameArgs = ReplaceArgumentTemplate(legacyLaunchArguments, arguments);
+            return $"{jvmArgs} {versionInfo.MainClass} {gameArgs}";
         }
 
         if (versionInfo.ModernLaunchArguments is not { } launchArgument)
@@ -197,15 +201,26 @@ public partial class NamelessLauncher : ILauncher
         return argsBuilder.ToString();
     }
 
+    private static string GenJvmArguments(Dictionary<string, string> arguments)
+    {
+        return ReplaceArgumentTemplate(
+            "-Djava.library.path=${natives_directory} " +
+            "-Djna.tmpdir=${natives_directory} " +
+            "-Dorg.lwjgl.system.SharedLibraryExtractPath=${natives_directory} " +
+            "-Dminecraft.launcher.brand=${launcher_name} " +
+            "-Dminecraft.launcher.version=${launcher_version} " +
+            "-cp ${classpath}",
+            arguments);
+    }
+
     private static string ReplaceArgumentTemplate(string template, Dictionary<string, string> arguments)
     {
         var argBuilder = new StringBuilder(template);
         foreach (Match match in ArgumentTemplateRegex().Matches(template))
         {
-            if (arguments.TryGetValue(match.Groups[1].Value, out var value))
-            {
-                argBuilder.Replace(match.Groups[0].Value, value);
-            }
+            if (!arguments.TryGetValue(match.Groups[1].Value, out var value)) continue;
+
+            argBuilder.Replace(match.Groups[0].Value, value.Contains(' ') ? $"\"{value}\"" : value);
         }
 
         return argBuilder.ToString();
@@ -243,6 +258,95 @@ public partial class NamelessLauncher : ILauncher
         return classPathBuilder.ToString();
     }
 
-    [GeneratedRegex(@"\$\{(.+)\}")]
+    private static async ValueTask<string> DecompressionNativeLibraries(IEnumerable<Library> libraries,
+        string librariesBasePath,
+        string systemName)
+    {
+        var tempDirectory = Directory.CreateTempSubdirectory("nameless_launcher_native_libraries_");
+        var tempDirectoryPath = tempDirectory.ToString();
+        var nativeLibraries = GetNativeLibraryInfosForSystem(libraries, systemName);
+
+        foreach (var nativeLibrary in nativeLibraries)
+        {
+            var nativeLibraryPath = Path.Combine(librariesBasePath, nativeLibrary.NativeLibraryInfo.Path);
+            if (!File.Exists(nativeLibraryPath))
+                throw new InvalidOperationException($"Native library {nativeLibraryPath} not exists");
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var extraSetting = new NativeLibraryExtractSetting();
+                    if (nativeLibrary.NativeLibraryExtractSetting != null)
+                    {
+                        extraSetting = nativeLibrary.NativeLibraryExtractSetting;
+                    }
+
+                    var nativeLibraryZip = ZipFile.OpenRead(nativeLibraryPath);
+                    foreach (var zipArchiveEntry in nativeLibraryZip.Entries)
+                    {
+                        if (extraSetting.Exclude.Contains(zipArchiveEntry.FullName) ||
+                            extraSetting.Exclude.Select(exclude =>
+                                    Path.EndsInDirectorySeparator(exclude) &&
+                                    zipArchiveEntry.FullName.StartsWith(exclude))
+                                .Order().First())
+                            continue;
+
+                        if (zipArchiveEntry.Name.Length == 0)
+                        {
+                            Directory.CreateDirectory(Path.Combine(tempDirectoryPath, zipArchiveEntry.FullName));
+                        }
+                        else
+                        {
+                            zipArchiveEntry.ExtractToFile(Path.Combine(tempDirectoryPath, zipArchiveEntry.FullName));
+                        }
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"Fail to decompression native library {nativeLibraryPath}", e);
+            }
+        }
+
+        Debug.WriteLine(tempDirectoryPath);
+        return tempDirectoryPath;
+    }
+
+    private static IEnumerable<NativeLibraryExtraInfo> GetNativeLibraryInfosForSystem(IEnumerable<Library> libraries,
+        string systemName)
+    {
+        var tempNativeLibraries =
+            libraries.Where(library => library.NativeLibraryInfo != null);
+
+#pragma warning disable CS8602
+        switch (systemName)
+        {
+            case MinecraftOSIdentify.Windows:
+                return tempNativeLibraries.Where(library =>
+                        library.NativeLibraryInfo?.NativeLibraryWindowsKey != null &&
+                        library.Downloads?.Classifiers?.NativeLibraryInfoWindows != null)
+                    .Select(library =>
+                        new NativeLibraryExtraInfo(library.Downloads.Classifiers.NativeLibraryInfoWindows,
+                            library.NativeLibraryExtractSetting)).ToArray();
+            case MinecraftOSIdentify.Linux:
+                return tempNativeLibraries.Where(library =>
+                        library.NativeLibraryInfo?.NativeLibraryLinuxKey != null &&
+                        library.Downloads?.Classifiers?.NativeLibraryInfoLinux != null)
+                    .Select(library => new NativeLibraryExtraInfo(library.Downloads.Classifiers.NativeLibraryInfoLinux,
+                        library.NativeLibraryExtractSetting)).ToArray();
+            case MinecraftOSIdentify.Osx:
+                return tempNativeLibraries.Where(library =>
+                        library.NativeLibraryInfo?.NativeLibraryOsXKey != null &&
+                        library.Downloads?.Classifiers?.NativeLibraryInfoOsx != null)
+                    .Select(library => new NativeLibraryExtraInfo(library.Downloads.Classifiers.NativeLibraryInfoOsx,
+                        library.NativeLibraryExtractSetting)).ToArray();
+        }
+#pragma warning restore CS8602
+
+        return Array.Empty<NativeLibraryExtraInfo>();
+    }
+
+    [GeneratedRegex(@"\$\{(.+?)\}")]
     private static partial Regex ArgumentTemplateRegex();
 }

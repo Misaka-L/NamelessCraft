@@ -200,7 +200,7 @@ public class Library
 
     [JsonPropertyName("extract")] public NativeLibraryExtractSetting? NativeLibraryExtractSetting { get; set; }
 
-    [JsonPropertyName("natives")] public NativeLibraryInfo? NativeLibraryInfo { get; set; }
+    [JsonPropertyName("natives")] public NativeLibrariesInfo? NativeLibraryInfo { get; set; }
 }
 
 public class LibraryDownloads
@@ -230,9 +230,16 @@ public class NativeLibraryInfo
     [JsonPropertyName("url")] public Uri Url { get; set; }
 }
 
+public class NativeLibrariesInfo
+{
+    [JsonPropertyName("linux")] public string? NativeLibraryLinuxKey { get; set; }
+    [JsonPropertyName("osx")] public string? NativeLibraryOsXKey { get; set; }
+    [JsonPropertyName("windows")] public string? NativeLibraryWindowsKey { get; set; }
+}
+
 public class NativeLibraryExtractSetting
 {
-    [JsonPropertyName("exclude")] public string[] Exclude { get; set; }
+    [JsonPropertyName("exclude")] public string[] Exclude { get; set; } = Array.Empty<string>();
 }
 
 public class LoggingOptions
