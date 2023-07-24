@@ -48,6 +48,10 @@ public class MicrosoftAuthenticator : IGameAuthenticator
             XboxUserAuthenticateResponse? xboxAuthenticateResponse = null;
             try
             {
+                var rpsTicket = Options.UseMinecraftLauncherClientId
+                    ? "" + Options.MicrosoftAccountAccessToken
+                    : "d=" + Options.MicrosoftAccountAccessToken;
+
                 xboxAuthenticateResponse = await httpClient.PostAsJsonAsync<XboxUserAuthenticateResponse>(
                     xboxLiveApiBaseUrl + "/user/authenticate", new
                     {
@@ -55,7 +59,7 @@ public class MicrosoftAuthenticator : IGameAuthenticator
                         {
                             AuthMethod = "RPS",
                             SiteName = "user.auth.xboxlive.com",
-                            RpsTicket = $"{Options.MicrosoftAccountAccessToken}"
+                            RpsTicket = rpsTicket
                         },
                         RelyingParty = "http://auth.xboxlive.com",
                         TokenType = "JWT"
@@ -118,7 +122,12 @@ public class MicrosoftAuthenticator : IGameAuthenticator
                     innerException);
             }
 
-            var minecraftToken = minecraftLoginResponse.AccessToken;
+            if (minecraftLoginResponse.AccessToken is not {} minecraftToken)
+            {
+                throw new InvalidOperationException(
+                    $"Can't get the response of {minecraftServiceApiBaseUrl + "/authentication/login_with_xbox"}, The Minecraft service API may have changed or you use an azure application which didn't pass the review?");
+            }
+            
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", minecraftToken);
 
             // Get Minecraft Profile
