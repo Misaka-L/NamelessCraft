@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessCraft", "NamelessCr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessCraft.Core", "NamelessCraft.Core\NamelessCraft.Core.csproj", "{A55607E8-7962-43FB-84EC-2D47DD968CCD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NamelessLauncher", "NamelessLauncher\NamelessLauncher.csproj", "{BCF4D952-5440-4910-B904-034533D0AF7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A55607E8-7962-43FB-84EC-2D47DD968CCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCF4D952-5440-4910-B904-034533D0AF7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCF4D952-5440-4910-B904-034533D0AF7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCF4D952-5440-4910-B904-034533D0AF7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCF4D952-5440-4910-B904-034533D0AF7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
